@@ -215,14 +215,34 @@ def deviceEvent()
 	if (eventraw == null) return
 
 	def event = parseJson(eventraw)
-	def data = event?.data ?: ""
-	def unit = event?.unit ?: ""
+	if (enableDebug) log.debug "event: ${event}"
 
 	// We can do this faster if we don't need info on the device
 	if (state.deviceIdList.contains(params.deviceId))
 	{
-		sendEvent("${clientIP}:${params.deviceId}", (Map) [name: event.name, value: event.value, unit: unit, descriptionText: "${event?.displayName} ${event.name} is ${event.value} ${unit}", isStateChange: true, data: data])
-		if (enableDebug) log.info "Received event from ${clientName}/${event.displayName}: [${event.name}, ${event.value} ${unit}]"
+		def data = event?.data ?: ""
+		def unit = event?.unit ?: ""
+		// Use the supplied description, if included. Else format a basic description.
+		def desc = event?.descriptionText ?: "${event?.displayName} ${event.name} is ${event.value} ${unit?:''}"
+		def button = (event?.name == 'button')
+		if (!button && (event?.name == 'lock') && (event?.value == 'unlocked') && (data))
+		// SmartThings Locks don't set lastCodeName, so we try to extract it from the associated data. This should work for both ST stock && rBoy's custom Lock DTH.
+		{
+			def parsed = parseJson(data)
+			if (parsed?.codeName) 
+			{
+				if (enableDebug) log.info "Unlocked by ${parsed.codeName}"
+				sendEvent("${clientIP}:${params.deviceId}", (Map) [name: 'lastCodeName', value: parsed.codeName, unit: '', descriptionText: "lastCodeName is ${parsed.codeName}" /*, isStateChange: true, data: data*/])
+			}
+		}
+		// Only force the state change for buttons
+		if (button) {
+			sendEvent("${clientIP}:${params.deviceId}", (Map) [name: event.name, value: event.value, unit: unit, descriptionText: desc, data: data, isStateChange: true])
+		} else {
+			sendEvent("${clientIP}:${params.deviceId}", (Map) [name: event.name, value: event.value, unit: unit, descriptionText: desc, data: data])
+		}
+		
+		if (enableDebug) log.info "Received event from ${clientName}/${event.displayName}: [${event.name}, ${event.value} ${unit}, isStateChange: ${button?'true':'??'}]"
 		return jsonResponse([:])
 	}
 
@@ -243,8 +263,14 @@ def wsSendEvent(event)
 	// We can do this faster if we don't need info on the device, so defer that for logging
 	if (state.deviceIdList.contains((int) event.deviceId))
 	{
-		sendEvent("${clientIP}:${event.deviceId}", (Map) [name: event.name, value: event.value, unit: event.unit, descriptionText: event.descriptionText, isStateChange: true])
-		if (enableDebug) log.info "Received event from ${clientName}/${event.displayName}: [${event.name}, ${event.value} ${event.unit}]"
+		def desc = event.descriptionText ?: "${event?.displayName} ${event.name} is ${event.value} ${event.unit}"
+		def button = (event.name == button)
+		if (button) {
+			sendEvent("${clientIP}:${event.deviceId}", (Map) [name: event.name, value: event.value, unit: event.unit, descriptionText: desc, isStateChange: true])
+		} else {
+			sendEvent("${clientIP}:${event.deviceId}", (Map) [name: event.name, value: event.value, unit: event.unit, descriptionText: desc])
+		}
+		if (enableDebug) log.info "Received event from ${clientName}/${event.displayName}: ${desc} [${event.name}, ${event.value} ${event.unit}, isStateChange: ${button?'true':'??'}]"
 	}
 }
 
@@ -480,7 +506,7 @@ def getDevice(params)
 		{
 	 	  groupname, device ->
 			if (foundDevice != null) return
-			foundDevice = settings."custom_${device.selector}".find{it.id == params.deviceId}
+			foundDevice = settings."custom_${groupname}".find{it.id == params.deviceId}
 		}
 	}
 	return foundDevice
@@ -504,7 +530,8 @@ def remoteDeviceCommand()
 	def device = getDevice(params)
 	if (device == null)
 	{
-		log.error "Could not locate a device with an id of ${device.deviceId}"
+		log.debug "params: ${params}"
+		log.error "Could not locate a device with an id of ${device?.deviceId}"
 		return jsonResponse([status: "error"])
 	}
 	
@@ -1354,7 +1381,8 @@ def devicePage()
 	def totalCustomDevices = 0
 	state.customDrivers?.each
 	{devicegroup, device ->
-		totalCustomDevices += settings."${device.selector}"?.size() ?: 0
+		// totalCustomDevices += settings."${device.selector}"?.size() ?: 0
+		totalCustomDevices += settings."custom_${devicegroup}"?.size() ?: 0
 	}
 	
 	def totalDevices = totalNativeDevices + totalCustomDevices
