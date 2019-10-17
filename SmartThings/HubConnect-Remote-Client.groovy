@@ -192,7 +192,7 @@ def getDevice(params)
 		{
 	 	  groupname, device ->
 			if (foundDevice != null) return
-			foundDevice = settings."custom_${device.selector}".find{it.id == params.deviceId}
+			foundDevice = settings."custom_${groupname}".find{it.id == params.deviceId}
 		}
 	}
 	return foundDevice
@@ -570,14 +570,16 @@ def deviceEvent()
 	if (eventraw == null) return
 
 	def event = parseJson(new String(eventraw))
-	def data = event?.data ?: ""
-    def unit = event?.unit ?: ""
 
 	def childDevice = getChildDevices()?.find { it.deviceNetworkId == "${serverIP}:${params.deviceId}"}
 	if (childDevice)
 	{
-		if (enableDebug) log.debug "Received event from Server/${childDevice.label}: [${event.name}, ${event.value} ${unit}, isStateChange: ${event.isStateChange}]"
-		childDevice.sendEvent([name: event.name, value: event.value, unit: unit, descriptionText: "${childDevice.displayName} ${event.name} is ${event.value} ${unit}", isStateChange: event.isStateChange, data: data])
+    	def data = event?.data ?: ""
+    	def unit = event?.unit ?: ""
+        def desc = event?.descriptionText ?: "${childDevice.displayName} ${event.name} is ${event.value} ${unit}"
+        
+		if (enableDebug) log.debug "Received event from Server/${childDevice.label}: ${desc} [${event.name}, ${event.value} ${unit}, isStateChange: ??]"
+		childDevice.sendEvent([name: event.name, value: event.value, unit: unit, descriptionText: desc, data: data])
 		return jsonResponse([status: "complete"])
 	}
 	else if (enableDebug) log.warn "Ignoring Received event from Server: Device Not Found!"
@@ -1112,7 +1114,8 @@ def devicePage()
 	def totalCustomDevices = 0
 	state.customDrivers?.each
 	{devicegroup, device ->
-		totalCustomDevices += settings."${device.selector}"?.size() ?: 0
+		// totalCustomDevices += settings."${device.selector}"?.size() ?: 0
+        totalCustomDevices += settings."custom_${devicegroup}"?.size() ?: 0
 	}
 	
 	def totalDevices = totalNativeDevices + totalCustomDevices
