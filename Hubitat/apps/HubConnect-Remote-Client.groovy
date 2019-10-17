@@ -193,7 +193,7 @@ def getDevice(params)
 		{
 	 	  groupname, device ->
 			if (foundDevice != null) return
-			foundDevice = settings."custom_${device.selector}".find{it.id == params.deviceId}
+			foundDevice = settings."custom_${groupname}".find{it.id == params.deviceId}
 		}
 	}
 	return foundDevice
@@ -215,10 +215,9 @@ def remoteDeviceCommand()
 
 	// Get the device
 	def device = getDevice(params)
-	if (!device)
+	if (device == null)
 	{
-		log.error "Could not locate a device with an id of ${param?.deviceId}"
-//		log.error "Command for an Undefined Device can not be processed."
+		log.error "Could not locate a device with an id of ${params.deviceId}"
 		return jsonResponse([status: "error"])
 	}
 	
@@ -557,16 +556,23 @@ def deviceEvent()
 	if (eventraw == null) return
 
 	def event = parseJson(new String(eventraw))
-	def data = event?.data ?: ""
-	def unit = event?.unit ?: ""
 
 	// We can do this faster if we don't need info on the device
 	for (id in state.deviceIdList)
 	{
 		if (id == params.deviceId)
 		{
-			sendEvent("${serverIP}:${params.deviceId}", (Map) [name: event.name, value: event.value, unit: unit, descriptionText: "${event.displayName} ${event.name} is ${event.value} ${unit}", isStateChange: true, data: data])
-			if (enableDebug) log.info "Received event from server/${event.displayName}: [${event.name}, ${event.value} ${unit}, isStateChange: true]"
+            def data = event?.data ?: ""
+	        def unit = event?.unit ?: ""
+            def button = (event?.name == button)
+            def desc = event?.descriptionText ?: "${event?.displayName} ${event?.name} is ${event?.value} ${unit?:''}"
+            
+		    if (button) {
+			    sendEvent("${serverIP}:${params.deviceId}", (Map) [name: event.name, value: event.value, unit: unit, descriptionText: desc, isStateChange: true, data: data])
+            } else {
+                sendEvent("${serverIP}:${params.deviceId}", (Map) [name: event.name, value: event.value, unit: unit, descriptionText: desc, data: data])
+            }
+			if (enableDebug) log.info "Received event from server/${event.displayName}: ${desc} [${event.name}, ${event.value} ${unit}, isStateChange: ${button?'true':'??'}]]"
 			return jsonResponse([status: "complete"])
 		}
 	}
@@ -1147,9 +1153,10 @@ def devicePage()
 	def totalCustomDevices = 0
 	state.customDrivers?.each
 	{devicegroup, device ->
-		totalCustomDevices += settings."${device.selector}"?.size() ?: 0
+		// totalCustomDevices += settings."${device.selector}"?.size() ?: 0
+		totalCustomDevices += settings."custom_${devicegroup}"?.size() ?: 0
 	}
-	
+	log.debug "total customDevices: ${totalCustomDevices}"
 	def totalDevices = totalNativeDevices + totalCustomDevices
 
 	dynamicPage(name: "devicePage", uninstall: false, install: false)
@@ -1281,5 +1288,5 @@ def getVersions()
 }
 
 def getIsConnected(){(state?.clientURI?.size() > 0 && state?.clientToken?.size() > 0) ? true : false}
-def getAppVersion() {[platform: "Hubitat", major: 1, minor: 4, build: 6009]}
+def getAppVersion() {[platform: "Hubitat", major: 1, minor: 4, build: 6008]}
 def getAppCopyright(){"&copy; 2019 Steve White, Retail Media Concepts LLC <a href=\"https://github.com/shackrat/Hubitat-Private/blob/master/HubConnect/License%20Agreement.md\" target=\"_blank\">HubConnect License Agreement</a>"}
