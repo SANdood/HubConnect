@@ -17,12 +17,10 @@
  */
 metadata 
 {
-	definition(name: "HubConnect Motion Sensor", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/UniversalDrivers/HubConnect-Motion-Sensor.groovy")
+	definition(name: "HubConnect Mobile App", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/UniversalDrivers/HubConnect-Mobile-App.groovy")
 	{
-		capability "Motion Sensor"
-		capability "Temperature Measurement"
-		capability "Battery"
-		capability "Refresh"
+		capability "Presence Sensor"
+		capability "Notification"
 
 		attribute "version", "string"
 		
@@ -60,7 +58,19 @@ def updated()
 */
 def initialize()
 {
-	refresh()
+
+}
+
+
+/*
+	deviceNotification
+    
+	send a command.
+*/
+def deviceNotification(value)
+{
+	parent.sendDeviceEvent(device.deviceNetworkId, "deviceNotification", [value])
+
 }
 
 
@@ -76,18 +86,6 @@ def parse(String description)
 
 
 /*
-	refresh
-    
-	Refreshes the device by requesting an update from the client hub.
-*/
-def refresh()
-{
-	// The server will update motion status
-	parent.sendDeviceEvent(device.deviceNetworkId, "refresh")
-}
-
-
-/*
 	sync
     
 	Synchronizes the device details with the parent.
@@ -95,7 +93,7 @@ def refresh()
 def sync()
 {
 	// The server will respond with updated status and details
-	parent.syncDevice(device.deviceNetworkId, "motion")
+	parent.syncDevice(device.deviceNetworkId, "presence")
 	sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
-def getDriverVersion() {[platform: "Universal", major: 1, minor: 2, build: 1]}
+def getDriverVersion() {[platform: "Universal", major: 1, minor: 4, build: 0]}

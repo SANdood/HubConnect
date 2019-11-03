@@ -17,15 +17,13 @@
  */
 metadata 
 {
-	definition(name: "HubConnect Motion Sensor", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/UniversalDrivers/HubConnect-Motion-Sensor.groovy")
+	definition(name: "HubConnect Fan Controller", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/UniversalDrivers/HubConnect-Fan-Controller.groovy")
 	{
-		capability "Motion Sensor"
-		capability "Temperature Measurement"
-		capability "Battery"
+		capability "Fan Control"
 		capability "Refresh"
 
 		attribute "version", "string"
-		
+
 		command "sync"
 	}
 }
@@ -76,13 +74,25 @@ def parse(String description)
 
 
 /*
+	setSpeed
+    
+	Sets the fan speed to <value>.
+*/
+def setSpeed(value)
+{
+	// The server will update status
+	parent.sendDeviceEvent(device.deviceNetworkId, "setSpeed", [value])
+}
+
+
+/*
 	refresh
     
 	Refreshes the device by requesting an update from the client hub.
 */
 def refresh()
 {
-	// The server will update motion status
+	// The server will update status
 	parent.sendDeviceEvent(device.deviceNetworkId, "refresh")
 }
 
@@ -95,7 +105,7 @@ def refresh()
 def sync()
 {
 	// The server will respond with updated status and details
-	parent.syncDevice(device.deviceNetworkId, "motion")
+	parent.syncDevice(device.deviceNetworkId, "fancontrol")
 	sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
-def getDriverVersion() {[platform: "Universal", major: 1, minor: 2, build: 1]}
+def getDriverVersion() {[platform: "Universal", major: 1, minor: 4, build: 0]}

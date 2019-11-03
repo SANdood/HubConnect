@@ -17,17 +17,17 @@
  */
 metadata 
 {
-	definition(name: "HubConnect Iris Smart Plug", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/UniversalDrivers/HubConnect-Iris-SmartPlug.groovy")
+	definition(name: "HubConnect RGBW Bulb", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/UniversalDrivers/HubConnect-RGBW-Bulb.groovy")
 	{
 		capability "Switch"
-		capability "Power Meter"
-		capability "Voltage Measurement"
+		capability "Switch Level"
+		capability "Color Control"
+		capability "Color Temperature"
+		capability "ColorMode"
 		capability "Refresh"
 
-		attribute "ACFrequency", "number"
 		attribute "version", "string"
 
-		command "toggle"
 		command "sync"
 	}
 }
@@ -102,14 +102,64 @@ def off()
 
 
 /*
-	toggle
+	setLevel
     
-	Toggles the device on/off state.
+	Sets the level to <level> over duration <duration>.
 */
-def toggle()
+def setLevel(value, duration=1)
 {
-	// The server will update on/off status
-	parent.sendDeviceEvent(device.deviceNetworkId, "toggle")
+	// The server will respond with a level attribute message.
+	parent.sendDeviceEvent(device.deviceNetworkId, "setLevel", [value, duration])
+}
+
+
+/*
+	setColor
+    
+	Sets color by setting both hue and saturation as specified by <value>.
+*/
+def setColor(value)
+{
+	if (value.hue == null || value.saturation == null) return
+
+	// The server will update status
+	parent.sendDeviceEvent(device.deviceNetworkId, "setColor", [[hue: value.hue, saturation: value.saturation, level: value?.level]])
+}
+
+
+/*
+	setHue
+    
+	Sets the Hue based on <value>.
+*/
+def setHue(value)
+{
+	// The server will update status
+	parent.sendDeviceEvent(device.deviceNetworkId, "setHue", [value])
+}
+
+
+/*
+	setSaturation
+    
+	Sets the Saturation based on <value>.
+*/
+def setSaturation(value)
+{
+	// The server will update status
+	parent.sendDeviceEvent(device.deviceNetworkId, "setSaturation", [value])
+}
+
+
+/*
+	setColorTemperature
+    
+	Sets the Color Temperature based on <value>.
+*/
+def setColorTemperature(value)
+{
+	// The server will update status
+	parent.sendDeviceEvent(device.deviceNetworkId, "setColorTemperature", [value])
 }
 
 
@@ -133,7 +183,7 @@ def refresh()
 def sync()
 {
 	// The server will respond with updated status and details
-	parent.syncDevice(device.deviceNetworkId, "irissmartplug")
+	parent.syncDevice(device.deviceNetworkId, "rgbbulb")
 	sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
-def getDriverVersion() {[platform: "Universal", major: 1, minor: 2, build: 1]}
+def getDriverVersion() {[platform: "Universal", major: 1, minor: 2, build: 2]}

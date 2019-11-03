@@ -17,11 +17,11 @@
  */
 metadata 
 {
-	definition(name: "HubConnect Lock", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/UniversalDrivers/HubConnect-Lock.groovy")
+	definition(name: "HubConnect Lock", namespace: "shackrat", author: "Steve White", ocfDeviceType: "oic.d.smartlock", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/SmartThings/DeviceTypes/HubConnect-Lock.groovy")
 	{
-		capability "Actuator"
-		capability "Lock"
-		capability "Lock Codes"
+        capability "Actuator"
+        capability "Lock"
+        capability "Lock Codes"
 		capability "Battery"
 		capability "Refresh"
 
@@ -30,6 +30,46 @@ metadata
 		
 		command "sync"
 	}
+
+    tiles {
+		multiAttributeTile(name:"toggle", type: "generic", width: 6, height: 4)
+		{
+		    tileAttribute ("device.lock", key: "PRIMARY_CONTROL") 
+		    {
+		        attributeState "locked", label:'locked', action:"lock.unlock", icon:"st.locks.lock.locked", backgroundColor:"#00A0DC", nextState:"unlocking"
+		        attributeState "unlocked", label:'unlocked', action:"lock.lock", icon:"st.locks.lock.unlocked", backgroundColor:"#FFFFFF", nextState:"locking"
+		        attributeState "locking", label:'locking', icon:"st.locks.lock.locked", backgroundColor:"#FFFFFF"
+		        attributeState "unlocking", label:'unlocking', icon:"st.locks.lock.unlocked", backgroundColor:"#00A0DC"
+		    }
+		    tileAttribute ("device.battery", key: "SECONDARY_CONTROL") 
+		    {
+		        attributeState "battery", label: 'battery ${currentValue}%', unit: "%"
+		    }
+		}
+		standardTile("lock", "device.lock", inactiveLabel: false, decoration: "flat", width: 3, height: 2) 
+		{
+		    state "default", label:'lock', action:"lock.lock", icon: "st.locks.lock.locked"
+		}
+		standardTile("unlock", "device.lock", inactiveLabel: false, decoration: "flat", width: 3, height: 2) 
+		{
+		    state "default", label:'unlock', action:"lock.unlock", icon: "st.locks.lock.unlocked"
+		}
+		standardTile("refresh", "device.lock", inactiveLabel: false, decoration: "flat", width: 2, height: 2)
+		{
+			state "default", label: '', action: "refresh.refresh", icon: "st.secondary.refresh"
+		}
+		standardTile("sync", "sync", inactiveLabel: false, decoration: "flat", width: 2, height: 2)
+		{
+			state "default", label: 'Sync', action: "sync", icon: "st.Bath.bath19"
+		}
+		valueTile("version", "version", inactiveLabel: false, decoration: "flat", width: 2, height: 2)
+		{
+			state "default", label: '${currentValue}'
+		}
+
+		main "toggle"
+		details(["toggle", "lock", "unlock", "sync", "refresh", "version"])
+    }    
 }
 
 
@@ -173,4 +213,4 @@ def sync()
 	parent.syncDevice(device.deviceNetworkId, "lock")
 	sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
-def getDriverVersion() {[platform: "Universal", major: 1, minor: 2, build: 6002]}
+def getDriverVersion() {[platform: "SmartThings", major: 1, minor: 3, build: 6001]}

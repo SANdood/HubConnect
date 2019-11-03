@@ -17,17 +17,19 @@
  */
 metadata 
 {
-	definition(name: "HubConnect Iris Smart Plug", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/UniversalDrivers/HubConnect-Iris-SmartPlug.groovy")
+	definition(name: "HubConnect AVR", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/UniversalDrivers/HubConnect-AVR.groovy")
 	{
 		capability "Switch"
-		capability "Power Meter"
-		capability "Voltage Measurement"
 		capability "Refresh"
+		capability "Actuator"
+		capability "Telnet"
+		capability "Initialize"
+		capability "AudioVolume"
 
-		attribute "ACFrequency", "number"
+		attribute "mediaInputSource", "string"
 		attribute "version", "string"
 
-		command "toggle"
+		command "setInputSource", [[name:"Id*", type: "NUMBER", description: "Input ID" ]]
 		command "sync"
 	}
 }
@@ -78,6 +80,63 @@ def parse(String description)
 
 
 /*
+	setVolume
+    
+	Does what it says.
+*/
+def setVolume(value)
+{
+	parent.sendDeviceEvent(device.deviceNetworkId, "setVolume", [value])
+}
+
+
+/*
+	editCurrentInputName
+    
+	Does what it says.
+*/
+def editCurrentInputName(value)
+{
+	parent.sendDeviceEvent(device.deviceNetworkId, "editCurrentInputName", [value])
+}
+
+
+/*
+	setInputSource
+    
+	Does what it says.
+*/
+def setInputSource(value)
+{
+	parent.sendDeviceEvent(device.deviceNetworkId, "setInputSource", [value])
+}
+
+
+/*
+	mute
+    
+	Mutes the device.
+*/
+def mute()
+{
+	// The server will update on/off status
+	parent.sendDeviceEvent(device.deviceNetworkId, "mute")
+}
+
+
+/*
+	unmute
+    
+	Unmutes the device.
+*/
+def unmute()
+{
+	// The server will update on/off status
+	parent.sendDeviceEvent(device.deviceNetworkId, "unmute")
+}
+
+
+/*
 	on
     
 	Turns the device on.
@@ -102,14 +161,26 @@ def off()
 
 
 /*
-	toggle
+	volumeUp
     
-	Toggles the device on/off state.
+	volumeUp on the device.
 */
-def toggle()
+def volumeUp()
 {
-	// The server will update on/off status
-	parent.sendDeviceEvent(device.deviceNetworkId, "toggle")
+	// The server will update status
+	parent.sendDeviceEvent(device.deviceNetworkId, "volumeUp")
+}
+
+
+/*
+	volumeDown
+    
+	volumeDown on the device.
+*/
+def volumeDown()
+{
+	// The server will update status
+	parent.sendDeviceEvent(device.deviceNetworkId, "volumeDown")
 }
 
 
@@ -133,7 +204,7 @@ def refresh()
 def sync()
 {
 	// The server will respond with updated status and details
-	parent.syncDevice(device.deviceNetworkId, "irissmartplug")
+	parent.syncDevice(device.deviceNetworkId, "switch")
 	sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
-def getDriverVersion() {[platform: "Universal", major: 1, minor: 2, build: 1]}
+def getDriverVersion() {[platform: "Universal", major: 1, minor: 4, build: 0]}

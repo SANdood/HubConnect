@@ -17,9 +17,9 @@
  */
 metadata 
 {
-	definition(name: "HubConnect Motion Sensor", namespace: "shackrat", author: "Steve White", ocfDeviceType: "oic.d.sensor", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/SmartThings/DeviceTypes/HubConnect-Motion-Sensor.groovy", mnmn: "SmartThings", vid: "generic-motion")
+	definition(name: "HubConnect Moisture Sensor", namespace: "shackrat", author: "Steve White", ocfDeviceType: "oic.d.sensor", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/SmartThings/DeviceTypes/HubConnect-Moisture-Sensor.groovy", mnmn: "SmartThings", vid: "generic-leak")
 	{
-		capability "Motion Sensor"
+		capability "Water Sensor"
 		capability "Temperature Measurement"
 		capability "Battery"
 		capability "Refresh"
@@ -31,35 +31,36 @@ metadata
 
 	tiles(scale: 2)
 	{
-		multiAttributeTile(name: "motion", type: "generic", width: 6, height: 4)
+		multiAttributeTile(name:"water", type: "generic", width: 6, height: 4)
 		{
-			tileAttribute("device.motion", key: "PRIMARY_CONTROL")
-			{
-				attributeState "active", label: 'motion', icon: "st.motion.motion.active", backgroundColor: "#00A0DC"
-				attributeState "inactive", label: 'no motion', icon: "st.motion.motion.inactive", backgroundColor: "#cccccc"
+			tileAttribute ("device.water", key: "PRIMARY_CONTROL") {
+				attributeState "dry", label: "Dry", icon:"st.alarm.water.dry", backgroundColor:"#ffffff"
+				attributeState "wet", label: "Wet", icon:"st.alarm.water.wet", backgroundColor:"#00A0DC"
 			}
+		}
+		standardTile("temperatureState", "device.temperature", width: 2, height: 2)
+		{
+			state "normal", icon:"st.alarm.temperature.normal", backgroundColor:"#ffffff"
+			state "freezing", icon:"st.alarm.temperature.freeze", backgroundColor:"#00A0DC"
+			state "overheated", icon:"st.alarm.temperature.overheat", backgroundColor:"#e86d13"
 		}
 		valueTile("temperature", "device.temperature", width: 2, height: 2)
 		{
-			state("temperature", label: '${currentValue}°', unit: "F",
-					backgroundColors: [
-							[value: 31, color: "#153591"],
-							[value: 44, color: "#1e9cbb"],
-							[value: 59, color: "#90d2a7"],
-							[value: 74, color: "#44b621"],
-							[value: 84, color: "#f1d801"],
-							[value: 95, color: "#d04e00"],
-							[value: 96, color: "#bc2323"]
-					]
+			state("temperature", label:'${currentValue}°',
+				backgroundColors:[
+					[value: 31, color: "#153591"],
+					[value: 44, color: "#1e9cbb"],
+					[value: 59, color: "#90d2a7"],
+					[value: 74, color: "#44b621"],
+					[value: 84, color: "#f1d801"],
+					[value: 95, color: "#d04e00"],
+					[value: 96, color: "#bc2323"]
+				]
 			)
 		}
 		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2)
 		{
-			state "battery", label: '${currentValue}% battery', unit: ""
-		}
-		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2)
-		{
-			state "default", action: "refresh.refresh", icon: "st.secondary.refresh"
+			state "battery", label:'${currentValue}% battery', unit:""
 		}
 		standardTile("sync", "sync", inactiveLabel: false, decoration: "flat", width: 2, height: 2)
 		{
@@ -70,8 +71,8 @@ metadata
 			state "default", label: '${currentValue}'
 		}
 
-		main(["motion", "temperature"])
-		details(["motion", "sync", "temperature", "refresh", "battery", "version"])
+		main (["water", "temperatureState"])
+		details(["water", "temperatureState", "temperature", "battery", "sync", "version"])
 	}
 }
 
@@ -127,7 +128,7 @@ def parse(String description)
 */
 def refresh()
 {
-	// The server will update motion status
+	// The server will update status
 	parent.sendDeviceEvent(device.deviceNetworkId, "refresh")
     sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
@@ -141,6 +142,6 @@ def refresh()
 def sync()
 {
 	// The server will respond with updated status and details
-	parent.syncDevice(device.deviceNetworkId, "motion")
+	parent.syncDevice(device.deviceNetworkId, "moisture")
 }
 def getDriverVersion() {[platform: "SmartThings", major: 1, minor: 3, build: 0]}

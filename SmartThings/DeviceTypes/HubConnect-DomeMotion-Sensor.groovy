@@ -17,10 +17,11 @@
  */
 metadata 
 {
-	definition(name: "HubConnect Motion Sensor", namespace: "shackrat", author: "Steve White", ocfDeviceType: "oic.d.sensor", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/SmartThings/DeviceTypes/HubConnect-Motion-Sensor.groovy", mnmn: "SmartThings", vid: "generic-motion")
+	definition(name: "HubConnect Dome Motion Sensor", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/SmartThings/DeviceTypes/HubConnect-DomeMotion-Sensor.groovy")
 	{
 		capability "Motion Sensor"
 		capability "Temperature Measurement"
+		capability "Illuminance Measurement"
 		capability "Battery"
 		capability "Refresh"
 
@@ -28,7 +29,7 @@ metadata
 		
 		command "sync"
 	}
-
+	
 	tiles(scale: 2)
 	{
 		multiAttributeTile(name: "motion", type: "generic", width: 6, height: 4)
@@ -53,6 +54,10 @@ metadata
 					]
 			)
 		}
+		valueTile("illuminance", "device.illuminance", decoration: "flat", inactiveLabel: false, width: 2, height: 2)
+		{
+			state "illuminance", label: '${currentValue}% illuminance', unit: ""
+		}
 		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2)
 		{
 			state "battery", label: '${currentValue}% battery', unit: ""
@@ -71,7 +76,7 @@ metadata
 		}
 
 		main(["motion", "temperature"])
-		details(["motion", "sync", "temperature", "refresh", "battery", "version"])
+		details(["motion", "sync", "temperature", "illuminance", "refresh", "battery", "version"])
 	}
 }
 
@@ -127,9 +132,8 @@ def parse(String description)
 */
 def refresh()
 {
-	// The server will update motion status
+	// The server will update status
 	parent.sendDeviceEvent(device.deviceNetworkId, "refresh")
-    sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
 
 
@@ -141,6 +145,7 @@ def refresh()
 def sync()
 {
 	// The server will respond with updated status and details
-	parent.syncDevice(device.deviceNetworkId, "motion")
+	parent.syncDevice(device.deviceNetworkId, "domemotion")
+	sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
-def getDriverVersion() {[platform: "SmartThings", major: 1, minor: 3, build: 0]}
+def getDriverVersion() {[platform: "SmartThings", major: 1, minor: 4, build: 0]}

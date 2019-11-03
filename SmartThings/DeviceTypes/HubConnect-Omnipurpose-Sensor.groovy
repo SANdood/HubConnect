@@ -17,10 +17,15 @@
  */
 metadata 
 {
-	definition(name: "HubConnect Motion Sensor", namespace: "shackrat", author: "Steve White", ocfDeviceType: "oic.d.sensor", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/SmartThings/DeviceTypes/HubConnect-Motion-Sensor.groovy", mnmn: "SmartThings", vid: "generic-motion")
+	definition(name: "HubConnect Omnipurpose Sensor", namespace: "shackrat", author: "Steve White", importUrl: "https://raw.githubusercontent.com/HubitatCommunity/HubConnect/master/SmartThings/DeviceTypes/HubConnect-Omnipurpose-Sensor.groovy")
 	{
 		capability "Motion Sensor"
 		capability "Temperature Measurement"
+		capability "Relative Humidity Measurement"
+		capability "Illuminance Measurement"
+		capability "Ultraviolet Index"
+		capability "Power Source"
+		capability "Tamper Alert"
 		capability "Battery"
 		capability "Refresh"
 
@@ -29,7 +34,7 @@ metadata
 		command "sync"
 	}
 
-	tiles(scale: 2)
+	tiles (scale: 2) 
 	{
 		multiAttributeTile(name: "motion", type: "generic", width: 6, height: 4)
 		{
@@ -53,13 +58,27 @@ metadata
 					]
 			)
 		}
+		valueTile("illuminance", "device.illuminance", decoration: "flat", inactiveLabel: false, width: 2, height: 2)
+		{
+			state "illuminance", label: '${currentValue}% illuminance', unit: ""
+		}
 		valueTile("battery", "device.battery", decoration: "flat", inactiveLabel: false, width: 2, height: 2)
 		{
 			state "battery", label: '${currentValue}% battery', unit: ""
 		}
-		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width: 2, height: 2)
+		standardTile("motion","device.motion", inactiveLabel: false, width: 2, height: 2) 
 		{
-			state "default", action: "refresh.refresh", icon: "st.secondary.refresh"
+			state "inactive",label:'no motion',icon:"st.motion.motion.inactive",backgroundColor:"#ffffff"
+			state "active",label:'motion',icon:"st.motion.motion.active",backgroundColor:"#00a0dc"
+		}
+		
+		valueTile("humidity","device.humidity", inactiveLabel: false, width: 2, height: 2) 
+		{
+			state "humidity",label:'${currentValue} % RH'
+		}	
+		standardTile("refresh", "device.power", inactiveLabel: false, decoration: "flat", width: 2, height: 2)
+		{
+			state "default", label: '', action: "refresh.refresh", icon: "st.secondary.refresh"
 		}
 		standardTile("sync", "sync", inactiveLabel: false, decoration: "flat", width: 2, height: 2)
 		{
@@ -69,9 +88,23 @@ metadata
 		{
 			state "default", label: '${currentValue}'
 		}
-
+		valueTile("ultravioletIndex","device.ultravioletIndex", inactiveLabel: false, width: 2, height: 2) 
+		{
+			state "ultravioletIndex",label:'${currentValue} UV INDEX',unit:""
+		}
+		standardTile("acceleration", "device.acceleration", inactiveLabel: false, width: 2, height: 2) 
+		{
+			state("inactive", label:'clear', icon:"st.motion.acceleration.inactive", backgroundColor:"#ffffff")
+			state("active", label:'tamper', icon:"st.motion.acceleration.active", backgroundColor:"#f39c12")
+		}
+		valueTile("battery", "device.battery", inactiveLabel: false, width: 2, height: 2) 
+		{
+			state "battery", label:'${currentValue}% battery', unit:""
+		}
+		           
 		main(["motion", "temperature"])
-		details(["motion", "sync", "temperature", "refresh", "battery", "version"])
+		details(["motion", "sync", "temperature", "humidity", "illuminance", "ultravioletIndex", 
+			"refresh", "battery", "version"])
 	}
 }
 
@@ -127,9 +160,8 @@ def parse(String description)
 */
 def refresh()
 {
-	// The server will update motion status
+	// The server will update status
 	parent.sendDeviceEvent(device.deviceNetworkId, "refresh")
-    sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
 
 
@@ -141,6 +173,7 @@ def refresh()
 def sync()
 {
 	// The server will respond with updated status and details
-	parent.syncDevice(device.deviceNetworkId, "motion")
+	parent.syncDevice(device.deviceNetworkId, "omnipurpose")
+	sendEvent([name: "version", value: "v${driverVersion.major}.${driverVersion.minor}.${driverVersion.build}"])
 }
-def getDriverVersion() {[platform: "SmartThings", major: 1, minor: 3, build: 0]}
+def getDriverVersion() {[platform: "SmartThings", major: 1, minor: 4, build: 0]}
